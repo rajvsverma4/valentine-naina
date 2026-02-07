@@ -147,7 +147,7 @@ function showBubble(btn, msg){
 function yes1(){ yesEffect(event.target); setTimeout(()=>show("s2"),500); }
 function no1(){
     no1Count++; jumpSafe(event.target);
-    const msgs=["Don’t lie 😤💖","Try again 😏","Riyaaa please 🥺","Last chance 😤❤️"];
+    const msgs=["Don’t lie 😤💖","Try again 😏","Nainaaa please 🥺","Last chance 😤❤️"];
     showBubble(event.target, msgs[no1Count % msgs.length]);
     if(no1Count>=10) yes1();
 }
