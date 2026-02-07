@@ -1,270 +1,343 @@
-/* ================= GLOBAL ================= */
-const bgAudio = document.getElementById("bgAudio");
-const bklAudio = document.getElementById("bklAudio");
-const wnVideo = document.getElementById("wnVideo");
-const mkcVideo = document.getElementById("mkcVideo");
-const videoBox = document.getElementById("videoBox");
-const videoOverlay = document.getElementById("videoOverlay");
-const videoLoader = document.getElementById("videoLoader");
-const bubble = document.getElementById("bubble");
-const slider = document.getElementById("slider");
-const sliderText = document.getElementById("sliderText");
-const sliderMsg = document.getElementById("sliderMsg");
-const sliderGlow = document.getElementById("sliderGlow");
-const sliderRing = document.getElementById("sliderRing");
-const pageFlash = document.getElementById("pageFlash");
-const finalHearts = document.getElementById("finalHearts");
-const app = document.getElementById("app");
-const heartRain = document.getElementById("heartRain");
-
-let no1Count = 0, no2Count = 0, no3Count = 0;
-let audioUnlocked = false, bubbleTimer = null;
-let prankStarted = false, ringDone = false;
-let wnReady = false, wnStarted = false;
-
-/* ================= INIT ================= */
-window.addEventListener("DOMContentLoaded", () => {
-    initHeartRain();
-    unlockAudio();
-    initTypewriter(document);
-    initFadeText(document);
-
-    if(wnVideo){
-        wnVideo.addEventListener("canplaythrough", () => {
-            wnReady = true;
-            if(videoLoader) videoLoader.style.display = "none";
-        });
-        wnVideo.addEventListener("loadedmetadata", () => { wnReady = true; });
-    }
-});
-
-function unlockAudio(){
-    document.body.addEventListener("click", () => {
-        if(!audioUnlocked){
-            bgAudio.volume = 0.4;
-            bgAudio.play().catch(()=>{});
-            wnVideo.load();
-            mkcVideo.load();
-            bklAudio.load();
-            wnVideo.play().then(() => wnVideo.pause()).catch(()=>{});
-            mkcVideo.play().then(() => mkcVideo.pause()).catch(()=>{});
-            bklAudio.play().then(() => bklAudio.pause()).catch(()=>{});
-            audioUnlocked = true;
-        }
-    }, { once: true });
+/* ================= RESET ================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
 }
 
-/* ================= ANIMATIONS ================= */
-function initHeartRain(){
-    setInterval(() => {
-        const h = document.createElement("div");
-        h.className = "heart";
-        h.innerHTML = ["💖","💕","❤️","💘"][Math.floor(Math.random()*4)];
-        h.style.left = Math.random()*100+"vw";
-        h.style.animationDuration = "6s";
-        heartRain.appendChild(h);
-        setTimeout(()=>h.remove(), 12000);
-    }, 450);
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
-function initTypewriter(container) {
-    container.querySelectorAll(".typeText").forEach(el => {
-        const raw = el.dataset.text || "";
-        if (el.typingInterval) clearInterval(el.typingInterval);
-        let chars = Array.from(raw);
-        el.textContent = "";
-        let i = 0;
-        el.typingInterval = setInterval(() => {
-            if(i < chars.length){ el.textContent += chars[i++]; }
-            else { clearInterval(el.typingInterval); }
-        }, 45);
-    });
+body {
+  background: radial-gradient(circle at top, #ffd1dc, #ff9eb8, #ff7aa2);
 }
 
-function initFadeText(container) {
-    container.querySelectorAll(".fadeText").forEach(el => {
-        el.style.opacity = 0;
-        setTimeout(() => { el.style.opacity = 1; }, 50);
-    });
+/* ================= BACKGROUND EFFECTS ================= */
+#bgGlow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 70%);
+  animation: pulse 6s infinite alternate;
+  z-index: 0;
 }
 
-function yesEffect(btn){
-    if(!btn) return;
-    btn.classList.add("yesPulse");
-    shakeApp();
-    setTimeout(() => btn.classList.remove("yesPulse"), 500);
+@keyframes pulse {
+  from { opacity: .4; }
+  to { opacity: .85; }
 }
 
-function shakeApp(){
-    let i=0;
-    const t=setInterval(() => {
-        app.style.transform = `translate(${Math.random()*6-3}px, ${Math.random()*6-3}px)`;
-        if(++i>8){ clearInterval(t); app.style.transform="translate(0,0)"; }
-    }, 35);
+#heartRain, #finalHearts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
 }
 
-function show(id){
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    const el = document.getElementById(id);
-    if(el) {
-        el.classList.add("active");
-        initFadeText(el);
-        initTypewriter(el);
-    }
+#finalHearts { z-index: 150; }
+
+.heart {
+  position: absolute;
+  top: -40px;
+  animation: fall linear infinite;
+  opacity: .9;
 }
 
-function jumpSafe(btn) {
-    const appBox = app.getBoundingClientRect();
-    const yesBtn = document.querySelector(".screen.active .yesBtn");
-    let yesBox = yesBtn ? yesBtn.getBoundingClientRect() : null;
-    const margin = 30;
-    let x, y, tries = 0;
-    do {
-        x = appBox.left + margin + Math.random() * (appBox.width - 140);
-        y = appBox.top + margin + Math.random() * (appBox.height - 140);
-        tries++;
-    } while (yesBox && overlap(x, y, yesBox) && tries < 25);
-    btn.style.position = "fixed";
-    btn.style.left = x + "px";
-    btn.style.top = y + "px";
+@keyframes fall {
+  from { transform: translateY(-40px) rotate(0deg); }
+  to { transform: translateY(110vh) rotate(360deg); }
 }
 
-function overlap(x, y, yes) {
-    return (x > yes.left - 80 && x < yes.right + 80 && y > yes.top - 80 && y < yes.bottom + 80);
+/* ================= PAGE FLASH ================= */
+#pageFlash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, #fff, #ff4f7c, #ff004c);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 99999;
 }
 
-function showBubble(btn, msg){
-    if(bubbleTimer) clearTimeout(bubbleTimer);
-    bubble.textContent = msg;
-    const r = btn.getBoundingClientRect();
-    bubble.style.left = (r.left+r.width/2)+"px";
-    bubble.style.top  = (r.bottom+12)+"px";
-    bubble.classList.add("show");
-    bubbleTimer = setTimeout(() => bubble.classList.remove("show"), 2800);
+.flash { animation: flash .6s ease-out; }
+
+@keyframes flash {
+  0% { opacity: 0; }
+  40% { opacity: .9; }
+  100% { opacity: 0; }
 }
 
-/* ================= ACTIONS ================= */
-function yes1(){ yesEffect(event.target); setTimeout(()=>show("s2"),500); }
-function no1(){
-    no1Count++; jumpSafe(event.target);
-    const msgs=["Don’t lie 😤💖","Try again 😏","Nainaaa please 🥺","Last chance 😤❤️"];
-    showBubble(event.target, msgs[no1Count % msgs.length]);
-    if(no1Count>=10) yes1();
+/* ================= MAIN APP ================= */
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
 }
 
-function yes2(){ yesEffect(event.target); setTimeout(()=>show("s3"),500); }
-function no2(){
-    no2Count++; jumpSafe(event.target);
-    // RESTORED No2 layers
-    const msgs=["Excuse me?? 😤😂","You better know 💖","Seriously?? 😭","Don’t joke 😏"];
-    showBubble(event.target, msgs[no2Count % msgs.length]);
-    if(no2Count>=5) yes2();
+/* ================= SCREENS ================= */
+.screen {
+  display: none;
+  flex-direction: column;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  padding: 26px 22px;
+  border-radius: 26px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255, 0, 90, 0.25),
+              0 0 70px rgba(255, 0, 120, 0.18);
+  position: relative;
+  z-index: 20;
+  animation: pop .4s ease;
 }
 
-function yes3(){ yesEffect(event.target); setTimeout(()=>show("s4"),500); }
-function no3(){
-    no3Count++; jumpSafe(event.target);
-    const msgs=["Just coffee? ☕🥺","Just 30 min? ⏳", "Just 15 min? 🥺", "Please princess 👑💖", "Say YES 😤❤️"];
-    showBubble(event.target, msgs[no3Count % msgs.length]);
-    if(no3Count>=12) yes3();
+@keyframes pop {
+  from { transform: scale(.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.screen.active { display: flex; }
+
+/* ================= TEXT ================= */
+h1, h2, h3, p {
+  color: #ff2e6f;
+  line-height: 1.5;
+}
+
+h1 { font-size: 1.85rem; font-weight: 700; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+h3 { font-size: 1.08rem; font-weight: 500; }
+p  { font-size: .95rem; }
+
+.bigGlow {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px #ff2e6f,
+               0 0 20px #ff2e6f,
+               0 0 40px #ff004c;
+  animation: pulse 1s infinite alternate;
+}
+
+/* ================= FADE ================= */
+.fadeText { opacity: 0; animation: fade 1s forwards; }
+.delay1 { animation-delay: .5s; }
+.delay2 { animation-delay: 1s; }
+.delay3 { animation-delay: 1.5s; }
+
+@keyframes fade { to { opacity: 1; } }
+
+/* ================= BUTTONS ================= */
+.btns {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  z-index: 30;
+}
+
+button {
+  background: linear-gradient(135deg,#ff3b6f,#ff8fab);
+  color: white;
+  border: none;
+  border-radius: 32px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(255,79,124,.7),
+              inset 0 0 6px rgba(255,255,255,.45);
+  transition: .25s;
+}
+
+button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 28px rgba(255,79,124,.95);
+}
+
+button:active { transform: scale(.95); }
+
+.yesPulse { animation: yesPulse .5s; }
+
+@keyframes yesPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.backBtn {
+  background: none !important;
+  color: #ff8fab !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  margin-top: 10px;
+  border: none;
+  opacity: .8;
+}
+
+/* ================= BUBBLE ================= */
+#bubble {
+  position: fixed;
+  padding: 8px 16px;
+  background: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff245a;
+  box-shadow: 0 0 20px rgba(255,105,135,.9);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) scale(.7);
+  transition: .25s;
+  z-index: 9999;
+}
+
+#bubble.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.08);
 }
 
 /* ================= SLIDER ================= */
-slider.addEventListener("input", () => {
-    const v = Number(slider.value);
-    sliderText.textContent = v+"%";
-    sliderGlow.style.opacity = v/100;
-    shakeApp();
-    if(v>=70 && v<80) sliderMsg.textContent="YES YES 😍💖";
-    else if(v>=90) sliderMsg.textContent="CONGOOO 💍💖";
-    else sliderMsg.textContent = ["Nice 😍","Keep going 😌","Almost 💖"][Math.floor(v/34)];
-
-    if(v>=100 && !ringDone){
-        ringDone=true;
-        explodeRing();
-        setTimeout(() => show("s5"), 500);
-        setTimeout(startPrank, 2500);
-    }
-});
-
-function explodeRing(){
-    sliderRing.style.display="block";
-    sliderRing.classList.add("ringBoom");
-    pageFlash.classList.add("flash");
-    setTimeout(() => {
-        pageFlash.classList.remove("flash");
-        sliderRing.style.display="none";
-    }, 900);
+#sliderBox {
+  position: relative;
+  width: 100%;
+  margin: 18px 0;
 }
 
-/* ================= VIDEO & RECOVERY ================= */
-function startPrank(){
-    if(prankStarted) return;
-    prankStarted = true;
-    bgAudio.pause();
-    videoBox.style.display = "block";
-    if(videoLoader && !wnReady) videoLoader.style.display = "flex";
-    waitForWN();
+#slider {
+  width: 100%;
+  height: 28px;
+  appearance: none;
+  border-radius: 30px;
+  background: linear-gradient(
+    90deg,#ff004c,#ff4f7c,#ff9eb8,#ff004c
+  );
+  background-size: 300% 100%;
+  animation: flow 3.2s linear infinite;
+  outline: none;
+  box-shadow: 0 0 18px rgba(255,0,80,.75);
 }
 
-function waitForWN() {
-    if (wnReady) { playWN(); } 
-    else { setTimeout(waitForWN, 300); }
+@keyframes flow {
+  to { background-position: 300% 0; }
 }
 
-function playWN(){
-    if(wnStarted) return;
-    wnStarted = true;
-    if(videoLoader) videoLoader.style.display = "none";
-    wnVideo.style.display="block";
-    wnVideo.muted = false;
-    wnVideo.volume = 1.0;
-    let p = wnVideo.play();
-    if (p !== undefined) {
-        p.catch(() => { 
-            wnVideo.muted = true; 
-            wnVideo.play(); 
-            setTimeout(() => { wnVideo.muted = false; }, 1000);
-        });
-    }
-    wnVideo.onended = () => {
-        wnVideo.style.display="none";
-        bklAudio.muted = false;
-        bklAudio.volume = 0;
-        bklAudio.play().catch(()=>{});
-        crossFadeAudio();
-        startEnding();
-    };
+#slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle,#fff,#ff004c);
+  border: 2px solid white;
+  box-shadow: 0 0 22px #ff004c,0 0 40px pink;
 }
 
-function crossFadeAudio(){
-    let v = 0;
-    const t = setInterval(() => {
-        v += 0.05;
-        if(v >= 0.6) { v = 0.6; clearInterval(t); }
-        bklAudio.volume = v;
-    }, 50);
+/* ================= VIDEO BOX ================= */
+#videoBox {
+  position: fixed;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  width: 92%;
+  max-width: 390px;
+  aspect-ratio: 16/9;
+  background: black;
+  border-radius: 22px;
+  overflow: hidden;
+  display: none;
+  box-shadow: 0 0 28px rgba(255,0,90,.8),
+              0 0 70px rgba(255,0,120,.45);
+  z-index: 200;
 }
 
-function startEnding(){
-    mkcVideo.style.display="block";
-    mkcVideo.muted = true; 
-    mkcVideo.play().catch(() => {});
-    
-    if(!window.finalHeartTimer) {
-        window.finalHeartTimer = setInterval(() => {
-            const h = document.createElement("div");
-            h.className = "heart";
-            h.innerHTML = ["💖","💕","❤️","💘","😍","🥰"][Math.floor(Math.random()*6)];
-            h.style.left = Math.random()*100+"vw";
-            finalHearts.appendChild(h);
-            setTimeout(()=>h.remove(), 9000);
-        }, 350);
-    }
-
-    setTimeout(() => {
-        videoOverlay.style.display="flex";
-    }, 4000);
+#videoBox video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-function replay(){ location.reload(); }
+/* ================= VIDEO LOADER ================= */
+#videoLoader {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.78);
+  color: white;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 400;
+  backdrop-filter: blur(3px);
+}
+
+/* ================= FINAL MESSAGE BELOW VIDEO ================= */
+#videoOverlay {
+  position: fixed;
+
+  /* Below video */
+  top: calc(45% + 150px);
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 90%;
+  max-width: 360px;
+
+  background: rgba(255,255,255,.98);
+  padding: 14px 18px;
+  border-radius: 20px;
+
+  text-align: center;
+  display: none;
+  flex-direction: column;
+
+  z-index: 1000;
+
+  box-shadow: 0 8px 28px rgba(255,0,90,.35);
+
+  animation: slideUp .5s ease;
+}
+
+#videoOverlay p {
+  font-size: .95rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* ================= OVERLAY ANIMATION ================= */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 360px) {
+  h2 { font-size: 1.05rem; }
+
+  button {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  #videoBox {
+    max-width: 330px;
+  }
+
+  #videoOverlay {
+    width: 95%;
+    padding: 12px 14px;
+  }
+}
